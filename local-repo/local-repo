@@ -1,0 +1,119 @@
+#!/usr/bin/env python3.3
+# vim:ts=4:sw=4:noexpandtab
+
+import sys
+
+# Load localrepo before argparse, because of localization stuff!
+from localrepo.localrepo import LocalRepo
+from localrepo.utils import Humanizer
+from argparse import ArgumentParser as A, RawDescriptionHelpFormatter as HF
+
+# Handle KeyboardInterrupt
+excepthook = sys.excepthook
+
+def lr_excepthook(type, value, traceback):
+	if not type is KeyboardInterrupt:
+		excepthook(type, value, traceback)
+	else:
+		LocalRepo.abort()
+
+sys.excepthook = lr_excepthook
+
+# Some constants
+LINKS = {'website': 'http://ushi.wurstcase.net/local-repo/',
+         'bugs': 'https://github.com/ushis/local-repo/issues',
+         'translations': 'https://www.transifex.net/projects/p/local-repo/'}
+
+CONF = '~/.config/local-repo'
+
+# Configure ArgumentParser
+p = A(description=_('This program helps to manage local repositories. Specify the path to the\n'
+                    'repository with the first argument. If no option is specified, some repo\n'
+                    'information will be printed.'),
+      usage=_('%(prog)s path [options]'),
+      epilog=Humanizer.info(LINKS, colored=False),
+      formatter_class=HF)
+
+p.a = p.add_argument
+
+p.a('path', type=str, metavar=_('path'),
+    help=_('path to the repo or the repo name if set up in your config file \'{0}\'').format(CONF))
+
+p.a('-a', '--add', action='store', dest='add', type=str, metavar=_('path'), nargs='+',
+    help=_('add a package to the repo - path can point to a local or remote package file, '
+           'pkgbuild file or pkgbuild tarball - supported protocols are HTTP(S) and FTP'))
+
+p.a('-A', '--aur-add', action='store', dest='aur_add', type=str, metavar=_('name'), nargs='+',
+    help=_('download, build and add a package from the AUR to the repo'))
+
+p.a('-b', '--rebuild', action='store', dest='rebuild', type=str, metavar=_('name'), nargs='+',
+    help=_('rebuild specified packages - NOTE: the \'pkgbuild\' path must be set up in the config '
+           'file'))
+
+p.a('-c', '--check', action='store_true', dest='check', default=False,
+    help=_('run an integrity check'))
+
+p.a('-C', '--clear-cache', action='store_true', dest='clear_cache', default=False,
+    help=_('clear the cache'))
+
+p.a('-e', '--elephant', action='store_true', dest='elephant', default=False,
+    help=_('the elephant never forgets'))
+
+p.a('-f', '--force', action='store_true', dest='force', default=False,
+    help=_('force an operation - use this with -a or --add to up-/downgrade a package'))
+
+p.a('-F', '--config', action='store', dest='config', type=str, metavar=_('path'),
+    help=_('use an alternative config file (instead of \'{0}\')').format(CONF))
+
+p.a('-i', '--info', action='store', dest='info', type=str, metavar=_('name'), nargs='+',
+    help=_('display info for specified packages'))
+
+p.a('-l', '--list', action='store_true', dest='list', default=False,
+    help=_('list all packages from the repo'))
+
+p.a('-r', '--remove', action='store', dest='remove', type=str, metavar=_('name'), nargs='+',
+    help=_('remove packages from the repo'))
+
+p.a('-R', '--restore', action='store_true', dest='restore_db', default=False,
+    help=_('restore repo database'))
+
+p.a('-s', '--search', action='store', dest='find', type=str, metavar=_('term'),
+    help=_('find packages'))
+
+p.a('-U', '--aur-upgrade', action='store_true', dest='aur_upgrade', default=False,
+    help=_('upgrade all packages in the repo, which are available in the AUR'))
+
+p.a('-V', '--vcs-upgrade', action='store_true', dest='vcs_upgrade', default=False,
+    help=_('upgrade all packages in the repo, which are based on a VCS and available in the AUR'))
+
+# Parse args
+args = dict(vars(p.parse_args()).items())
+
+# Init the repo
+LocalRepo.init(args['path'], args['config']) if args['config'] else LocalRepo.init(args['path'])
+del(args['path'], args['config'])
+
+# Print repo info if no option is specified
+args['repo_info'] = False if any(args.values()) else True
+
+# Run preload commands
+for method in (opt for opt in ('clear_cache', 'elephant', 'restore_db') if args[opt]):
+	getattr(LocalRepo, method)()
+
+del(args['clear_cache'], args['elephant'], args['restore_db'])
+
+# Ready?
+LocalRepo.load_repo() if any(args.values()) else LocalRepo.shutdown()
+
+# Run add commands
+for method, arg in ((opt, args[opt]) for opt in ('add', 'aur_add') if args[opt]):
+	getattr(LocalRepo, method)(arg, args['force'])
+
+del(args['add'], args['aur_add'], args['force'])
+
+# Run commands
+for method, arg in ((opt, arg) for opt, arg in args.items() if arg):
+	getattr(LocalRepo, method)() if type(arg) is bool else getattr(LocalRepo, method)(arg)
+
+# Shutdown
+LocalRepo.shutdown()

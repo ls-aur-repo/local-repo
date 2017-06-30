@@ -1,0 +1,77 @@
+# The local-repo config file should be stored in '~/.config/local-repo',
+# but any other place is possible using the -F switch.
+#
+# For more info see: http://ushi.wurstcase.net/local-repo/#sec-config
+#
+# This is the syntax
+#
+# [reponame]
+# path = /path/to/my/repo
+# foo = bar
+#
+# Supported options are
+#   path            Path to the repo(database) NOTE: This path must be absolute
+#
+# These paths can either be absolute or relative to the path above
+#   cache           Path to the cache file. Default is /path/to/my/repo/.cache
+#   log             Path to the log file. Default is /path/to/my/repo/.log
+#   buildlog        Path to a dir to store buildlogs from 'makepkg -L'
+#   pkgbuild        Path to a dir to store the PKGBUILDs.
+#                   NOTE: This is mandatory, if you want to use -b/--rebuild
+#
+# Boolean options must be '1', 'yes', 'true', 'on' or '0', 'no', 'false', 'off'
+#   sign            If true, '--sign' will be added to 'makepkg' calls
+#   signdb          If true, '--verify --sign' will be added to 'repo-add'/'repo-remove' calls
+#   uninstall_deps  If true, local-repo uninstalls previously installed dependencies
+#
+# List values are ' ' separated: option = val1 val2 val3
+#   no-aur-upgrade  A list of packages, which will be ignored during an AUR upgrade
+
+
+# Global options goes to [all]
+[all]
+
+# Sign all my packages
+sign = yes
+
+# Sign all my databases
+signdb = yes
+
+
+# My Repo
+[myrepo]
+
+# I want to call 'local-repo myrepo [options]'
+path = /srv/http/myrepo
+
+# Store cache in /tmp/my-local-repo-cache-file
+cache = /tmp/my-local-repo-cache-file
+
+# Store log in /srv/http/myrepo/logs/log
+log = logs/log
+
+
+# One more repo
+[experimental]
+path = /home/joe/experimental/packages
+
+# Store buildlogs in /home/joe/experimental/packages/log/
+buildlog = log
+
+# Store PKGBUILDs in /home/joe/experimental/pkgbuilds
+pkgbuild = /home/joe/experimental/pkgbuilds
+
+# Dont sign my experimental packages
+sign = no
+
+# Dont sign my experimental database
+signdb = no
+
+
+# The developers set up
+[ushi]
+path = /path/to/my/repo
+cache = .repo/cache
+log = .repo/log
+buildlog = .repo/buildlog
+pkgbuild = .repo/pkgbuild

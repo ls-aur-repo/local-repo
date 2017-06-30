@@ -1,0 +1,75 @@
+# bash completion for local-repo
+
+# available packages completion
+_local_repo_packages()
+{
+    COMPREPLY+=( $(compgen -W "$(
+        ${words[0]} "${words[1]}" -l 2>/dev/null | grep -v '>' | cut -d' ' -f1
+    )" -- "$cur") )
+}
+
+# available repos completion
+_local_repo_repos()
+{
+    COMPREPLY+=( $(compgen -W "$(
+        local r conf=~/.config/local-repo
+
+        for r in $(egrep -so '^\[\w+\]$' "$conf"); do
+            [[ "$r" != '[all]' ]] && printf '%s\n' "${r:1:-1}"
+        done
+    )" -- "$cur") )
+}
+
+# local-repo completion
+_local_repo()
+{
+    local cur prev words cword i
+    _init_completion || return
+
+    # need path or repo name
+    if [ $cword -eq 1 ]; then
+        _local_repo_repos
+        [[ "${#COMPREPLY[@]}" -gt 0 ]] && return 0
+        _filedir
+        return 0
+    fi
+
+    # check the prev argument
+    case "$prev" in
+        -F|--config)
+            _filedir
+            return 0
+            ;;
+    esac
+
+    # check the last option
+    for ((i=$cword; i > 2; i--)); do
+        case "${words[i-1]}" in
+            -h|--help)
+                return 0
+                ;;
+            -fa|-a|--add)
+                _filedir
+                [[ i -eq $cword ]] && return 0
+                break
+                ;;
+            -i|--info|-r|--remove|-s|--search|-b|--rebuild)
+                _local_repo_packages
+                [[ i -eq $cword ]] && return 0
+                break
+                ;;
+            -*)
+                break
+                ;;
+        esac
+    done
+
+    COMPREPLY+=( $(compgen -W '
+        --add --aur-add --aur-upgrade --check --clear-cache --config
+        --elephant --force --help --info --list --rebuild --remove --restore
+        --search --vcs-upgrade
+    ' -- "$cur") )
+
+} && complete -F _local_repo local-repo
+
+# ex: ts=4 sw=4 et filetype=sh
