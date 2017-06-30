@@ -2,7 +2,7 @@
 # Contributor: ushi <ushi@porkbox.net>
 
 pkgname=local-repo
-pkgver=1.6.6.0.ga75a097
+pkgver=1.6.6.1.gdd3e2b4
 pkgrel=1
 pkgdesc="Local repository manager"
 arch=('any')
