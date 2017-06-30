@@ -11,6 +11,8 @@ url="https://github.com/sirlucjan/local-repo/"
 license=('GPL')
 depends=('pacman' 'python>=3.3')
 makedepends=('gettext')
+provides=('local-repo')
+conflitcs=('local-repo')
 install=local-repo.install
 source=("$pkgname::git://github.com/sirlucjan/local-repo.git")
 md5sums=('SKIP')
